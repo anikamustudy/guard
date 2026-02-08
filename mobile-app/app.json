@@ -1,0 +1,74 @@
+{
+  "expo": {
+    "name": "Guard Attendance",
+    "slug": "guard-attendance-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1E3A8A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.guard.attendance",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app requires camera access to capture attendance selfies.",
+        "NSLocationWhenInUseUsageDescription": "This app requires location access to verify your presence at the duty location during check-in and check-out.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app requires location access to verify your presence at the duty location.",
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+      }
+    },
+    "android": {
+      "package": "com.guard.attendance",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1E3A8A"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "CAMERA",
+        "FOREGROUND_SERVICE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
+        "WAKE_LOCK"
+      ],
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Guard Attendance to use your location to verify check-ins at duty locations."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Guard Attendance to access your camera to capture attendance selfies."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#1E3A8A",
+          "sounds": ["./assets/notification-sound.wav"]
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "guard-attendance-app"
+      }
+    }
+  }
+}
