@@ -38,6 +38,12 @@ const attendanceQueryValidation = [
   query('endDate').optional().isISO8601().withMessage('End date must be a valid ISO 8601 date'),
 ];
 
+// Stats query validation
+const statsQueryValidation = [
+  ...attendanceQueryValidation,
+  query('userId').optional().isMongoId().withMessage('Valid user ID is required'),
+];
+
 // Guard routes
 router.post('/check-in', authenticate, apiLimiter, validate(checkInValidation), checkIn);
 router.post('/check-out', authenticate, apiLimiter, validate(checkOutValidation), checkOut);
@@ -57,10 +63,7 @@ router.get(
   '/stats',
   authenticate,
   authorize('admin', 'supervisor'),
-  validate([
-    ...attendanceQueryValidation,
-    query('userId').optional().isMongoId().withMessage('Valid user ID is required'),
-  ]),
+  validate(statsQueryValidation),
   getAttendanceStats
 );
 

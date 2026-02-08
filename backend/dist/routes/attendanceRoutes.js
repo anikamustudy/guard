@@ -28,6 +28,11 @@ const attendanceQueryValidation = [
     (0, express_validator_1.query)('startDate').optional().isISO8601().withMessage('Start date must be a valid ISO 8601 date'),
     (0, express_validator_1.query)('endDate').optional().isISO8601().withMessage('End date must be a valid ISO 8601 date'),
 ];
+// Stats query validation
+const statsQueryValidation = [
+    ...attendanceQueryValidation,
+    (0, express_validator_1.query)('userId').optional().isMongoId().withMessage('Valid user ID is required'),
+];
 // Guard routes
 router.post('/check-in', auth_1.authenticate, rateLimiter_1.apiLimiter, (0, validator_1.validate)(checkInValidation), attendanceController_1.checkIn);
 router.post('/check-out', auth_1.authenticate, rateLimiter_1.apiLimiter, (0, validator_1.validate)(checkOutValidation), attendanceController_1.checkOut);
@@ -35,8 +40,5 @@ router.get('/my-attendance', auth_1.authenticate, (0, validator_1.validate)(atte
 router.get('/today', auth_1.authenticate, attendanceController_1.getTodayAttendance);
 // Admin/Supervisor routes
 router.get('/', auth_1.authenticate, (0, auth_1.authorize)('admin', 'supervisor'), (0, validator_1.validate)(attendanceQueryValidation), attendanceController_1.getAllAttendance);
-router.get('/stats', auth_1.authenticate, (0, auth_1.authorize)('admin', 'supervisor'), (0, validator_1.validate)([
-    ...attendanceQueryValidation,
-    (0, express_validator_1.query)('userId').optional().isMongoId().withMessage('Valid user ID is required'),
-]), attendanceController_1.getAttendanceStats);
+router.get('/stats', auth_1.authenticate, (0, auth_1.authorize)('admin', 'supervisor'), (0, validator_1.validate)(statsQueryValidation), attendanceController_1.getAttendanceStats);
 exports.default = router;

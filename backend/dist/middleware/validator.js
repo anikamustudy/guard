@@ -7,7 +7,8 @@ const validate = (validations) => {
         await Promise.all(validations.map((validation) => validation.run(req)));
         const errors = (0, express_validator_1.validationResult)(req);
         if (errors.isEmpty()) {
-            return next();
+            next();
+            return;
         }
         res.status(400).json({
             error: 'Validation failed',

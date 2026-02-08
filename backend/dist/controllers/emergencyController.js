@@ -34,13 +34,11 @@ const createEmergencyAlert = async (req, res) => {
             isActive: true,
             fcmToken: { $exists: true, $ne: null },
         });
-        const notificationPromises = supervisorsAndAdmins.map((user) => {
-            if (user.fcmToken) {
-                return (0, firebase_1.sendPushNotification)(user.fcmToken, '🚨 Emergency Alert', `${req.user.name} triggered an emergency alert!`).catch((error) => {
-                    console.error(`Failed to send notification to ${user.email}:`, error);
-                });
-            }
-        });
+        const notificationPromises = supervisorsAndAdmins
+            .filter(user => user.fcmToken)
+            .map((user) => (0, firebase_1.sendPushNotification)(user.fcmToken, '🚨 Emergency Alert', `${req.user.name} triggered an emergency alert!`).catch((error) => {
+            console.error(`Failed to send notification to ${user.email}:`, error);
+        }));
         await Promise.allSettled(notificationPromises);
         const populatedAlert = await EmergencyAlert_1.EmergencyAlert.findById(alert._id)
             .populate('userId', 'name email phone')

@@ -1,13 +1,9 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getGuardsByLocation = exports.assignLocation = exports.deleteUser = exports.updateUser = exports.createUser = exports.getUserById = exports.getAllUsers = void 0;
 const User_1 = require("../models/User");
 const DutyLocation_1 = require("../models/DutyLocation");
 const AuditLog_1 = require("../models/AuditLog");
-const bcrypt_1 = __importDefault(require("bcrypt"));
 const getAllUsers = async (req, res) => {
     try {
         const { page = 1, limit = 20, role, isActive } = req.query;
@@ -103,39 +99,38 @@ const updateUser = async (req, res) => {
     try {
         const { id } = req.params;
         const { name, email, phone, role, password } = req.body;
-        const updateData = {};
-        if (name !== undefined)
-            updateData.name = name;
-        if (email !== undefined)
-            updateData.email = email;
-        if (phone !== undefined)
-            updateData.phone = phone;
-        if (role !== undefined)
-            updateData.role = role;
-        // Handle password update separately to ensure it gets hashed
-        if (password) {
-            const salt = await bcrypt_1.default.genSalt(10);
-            updateData.password = await bcrypt_1.default.hash(password, salt);
-        }
-        const user = await User_1.User.findByIdAndUpdate(id, updateData, { new: true })
-            .populate('assignedLocations', 'name address')
-            .select('-password');
+        const user = await User_1.User.findById(id);
         if (!user) {
             res.status(404).json({ error: 'User not found' });
             return;
         }
+        // Update fields
+        if (name !== undefined)
+            user.name = name;
+        if (email !== undefined)
+            user.email = email;
+        if (phone !== undefined)
+            user.phone = phone;
+        if (role !== undefined)
+            user.role = role;
+        if (password !== undefined)
+            user.password = password; // Will be hashed by pre-save hook
+        await user.save();
         await AuditLog_1.AuditLog.create({
             userId: req.user._id,
             action: 'USER_UPDATED',
             metadata: {
                 updatedUserId: user._id,
-                changes: updateData,
+                changes: { name, email, phone, role, passwordChanged: !!password },
                 updatedBy: req.user.email,
             },
         });
+        const updatedUser = await User_1.User.findById(id)
+            .populate('assignedLocations', 'name address')
+            .select('-password');
         res.json({
             message: 'User updated successfully',
-            user,
+            user: updatedUser,
         });
     }
     catch (error) {

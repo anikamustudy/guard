@@ -3,7 +3,6 @@ import { User } from '../models/User';
 import { DutyLocation } from '../models/DutyLocation';
 import { AuditLog } from '../models/AuditLog';
 import { AuthRequest } from '../middleware/auth';
-import bcrypt from 'bcrypt';
 
 export const getAllUsers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -108,40 +107,38 @@ export const updateUser = async (req: AuthRequest, res: Response): Promise<void>
     const { id } = req.params;
     const { name, email, phone, role, password } = req.body;
 
-    const updateData: any = {};
-    if (name !== undefined) updateData.name = name;
-    if (email !== undefined) updateData.email = email;
-    if (phone !== undefined) updateData.phone = phone;
-    if (role !== undefined) updateData.role = role;
-
-    // Handle password update separately to ensure it gets hashed
-    if (password) {
-      const salt = await bcrypt.genSalt(10);
-      updateData.password = await bcrypt.hash(password, salt);
-    }
-
-    const user = await User.findByIdAndUpdate(id, updateData, { new: true })
-      .populate('assignedLocations', 'name address')
-      .select('-password');
-
+    const user = await User.findById(id);
     if (!user) {
       res.status(404).json({ error: 'User not found' });
       return;
     }
+
+    // Update fields
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = email;
+    if (phone !== undefined) user.phone = phone;
+    if (role !== undefined) user.role = role;
+    if (password !== undefined) user.password = password; // Will be hashed by pre-save hook
+
+    await user.save();
 
     await AuditLog.create({
       userId: req.user._id,
       action: 'USER_UPDATED',
       metadata: {
         updatedUserId: user._id,
-        changes: updateData,
+        changes: { name, email, phone, role, passwordChanged: !!password },
         updatedBy: req.user.email,
       },
     });
 
+    const updatedUser = await User.findById(id)
+      .populate('assignedLocations', 'name address')
+      .select('-password');
+
     res.json({
       message: 'User updated successfully',
-      user,
+      user: updatedUser,
     });
   } catch (error: any) {
     console.error('Update user error:', error);

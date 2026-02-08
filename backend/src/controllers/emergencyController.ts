@@ -38,17 +38,17 @@ export const createEmergencyAlert = async (req: AuthRequest, res: Response): Pro
       fcmToken: { $exists: true, $ne: null },
     });
 
-    const notificationPromises = supervisorsAndAdmins.map((user) => {
-      if (user.fcmToken) {
-        return sendPushNotification(
-          user.fcmToken,
+    const notificationPromises = supervisorsAndAdmins
+      .filter(user => user.fcmToken)
+      .map((user) =>
+        sendPushNotification(
+          user.fcmToken!,
           '🚨 Emergency Alert',
           `${req.user.name} triggered an emergency alert!`
         ).catch((error) => {
           console.error(`Failed to send notification to ${user.email}:`, error);
-        });
-      }
-    });
+        })
+      );
 
     await Promise.allSettled(notificationPromises);
 

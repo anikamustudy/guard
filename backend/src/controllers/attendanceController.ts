@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import { Attendance } from '../models/Attendance';
 import { DutyLocation } from '../models/DutyLocation';
-import { Shift } from '../models/Shift';
+import { Shift, IShift } from '../models/Shift';
 import { AuditLog } from '../models/AuditLog';
 import { isWithinGeofence } from '../utils/geolocation';
 import { AuthRequest } from '../middleware/auth';
@@ -99,8 +99,13 @@ export const checkIn = async (req: AuthRequest, res: Response): Promise<void> =>
     // Determine if late
     const now = new Date();
     const [shiftHour, shiftMinute] = shift.startTime.split(':').map(Number);
-    const shiftStart = new Date();
+    const shiftStart = new Date(now);
     shiftStart.setHours(shiftHour, shiftMinute, 0, 0);
+
+    // Handle shifts that may have started yesterday (overnight shifts)
+    if (shiftStart > now) {
+      shiftStart.setDate(shiftStart.getDate() - 1);
+    }
 
     const isLate = now > new Date(shiftStart.getTime() + shift.lateThreshold * 60000);
     const status = isLate ? 'late' : 'present';
@@ -216,10 +221,23 @@ export const checkOut = async (req: AuthRequest, res: Response): Promise<void> =
     );
 
     const now = new Date();
-    const shift = attendance.shiftId as any;
+    
+    // Type guard to ensure shift is populated
+    if (!attendance.shiftId || typeof attendance.shiftId === 'string') {
+      res.status(500).json({ error: 'Shift data not properly loaded' });
+      return;
+    }
+    
+    const shift = attendance.shiftId as unknown as IShift;
     const [endHour, endMinute] = shift.endTime.split(':').map(Number);
-    const shiftEnd = new Date();
+    const shiftEnd = new Date(now);
     shiftEnd.setHours(endHour, endMinute, 0, 0);
+
+    // Handle shifts that end the next day (overnight shifts)
+    const [startHour] = shift.startTime.split(':').map(Number);
+    if (endHour < startHour) {
+      shiftEnd.setDate(shiftEnd.getDate() + 1);
+    }
 
     // Check for early checkout
     const isEarlyCheckout = now < shiftEnd;
